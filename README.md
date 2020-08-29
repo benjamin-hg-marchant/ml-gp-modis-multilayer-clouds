@@ -100,7 +100,7 @@ To train the algorithm, a co-located MODIS CALIOP and CloudSat Dataset has been 
 
 
 ```python
-df = pd.read_csv('2008_01_colocated_modis_caliop_cloudsat_random_sample_dataset.csv',index_col=False)
+df = pd.read_csv('../data/2008_01_colocated_modis_caliop_cloudsat_random_sample_dataset.csv',index_col=False)
 
 print('dataframe shape',df.shape)
 ```
@@ -552,7 +552,7 @@ plt.show()
 ```
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_11_0.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_11_0.png)
 
 
 Remove pixels with latitude > 70:
@@ -653,7 +653,7 @@ plt.show()
 ```
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_21_0.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_21_0.png)
 
 
 
@@ -664,7 +664,7 @@ plt.show()
 ```
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_22_0.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_22_0.png)
 
 
 
@@ -697,7 +697,7 @@ plt.show()
 ```
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_24_0.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_24_0.png)
 
 
 
@@ -719,7 +719,7 @@ plt.show()
 ```
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_26_0.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_26_0.png)
 
 
 ### Data Preparation (scaling and standardization) <a class="anchor" id="data_preparation"></a>
@@ -1043,11 +1043,11 @@ scaler_liquid, df_train_liquid_processed, df_test_liquid_processed = data_prepar
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_40_3.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_40_3.png)
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_40_4.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_40_4.png)
 
 
     CPU times: user 401 ms, sys: 30.5 ms, total: 432 ms
@@ -1077,22 +1077,22 @@ evaluate_gp_model('liquid', features_train, gp_liquid, df_test_liquid_processed)
 ```
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_42_0.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_42_0.png)
 
 
     accuracy_score: 0.782780410742496
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_42_2.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_42_2.png)
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_42_3.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_42_3.png)
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_42_4.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_42_4.png)
 
 
     CPU times: user 1.13 s, sys: 27.9 ms, total: 1.16 s
@@ -1123,7 +1123,7 @@ scaler_ice, df_train_ice_processed, df_test_ice_processed = data_preparation(
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_44_1.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_44_1.png)
 
 
     (not) ice    1124
@@ -1132,11 +1132,11 @@ scaler_ice, df_train_ice_processed, df_test_ice_processed = data_preparation(
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_44_3.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_44_3.png)
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_44_4.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_44_4.png)
 
 
 
@@ -1150,22 +1150,22 @@ evaluate_gp_model('ice', features_train, gp_ice, df_test_ice_processed)
 ```
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_46_0.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_46_0.png)
 
 
     accuracy_score: 0.7863349131121643
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_46_2.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_46_2.png)
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_46_3.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_46_3.png)
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_46_4.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_46_4.png)
 
 
 ### Train a model that detect monolayer mixed cloud <a class="anchor" id="monolayer_mixed"></a>
@@ -1192,7 +1192,7 @@ scaler_mixed, df_train_mixed_processed, df_test_mixed_processed = data_preparati
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_48_1.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_48_1.png)
 
 
     mixed          900
@@ -1201,11 +1201,11 @@ scaler_mixed, df_train_mixed_processed, df_test_mixed_processed = data_preparati
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_48_3.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_48_3.png)
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_48_4.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_48_4.png)
 
 
 
@@ -1229,22 +1229,22 @@ evaluate_gp_model('mixed', features_train, gp_mixed, df_test_mixed_processed)
 ```
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_50_0.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_50_0.png)
 
 
     accuracy_score: 0.7338072669826224
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_50_2.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_50_2.png)
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_50_3.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_50_3.png)
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_50_4.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_50_4.png)
 
 
 ### Train a model that detect multilayer (ice / liquid) cloud <a class="anchor" id="multilayer_ice_liquid"></a>
@@ -1271,7 +1271,7 @@ scaler_ice_over_liquid, df_train_ice_over_liquid_processed, df_test_ice_over_liq
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_52_1.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_52_1.png)
 
 
     ice / liquid          855
@@ -1280,11 +1280,11 @@ scaler_ice_over_liquid, df_train_ice_over_liquid_processed, df_test_ice_over_liq
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_52_3.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_52_3.png)
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_52_4.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_52_4.png)
 
 
 
@@ -1308,22 +1308,22 @@ evaluate_gp_model('ice / liquid', features_train, gp_ice_over_liquid, df_test_ic
 ```
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_54_0.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_54_0.png)
 
 
     accuracy_score: 0.6184834123222749
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_54_2.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_54_2.png)
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_54_3.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_54_3.png)
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_54_4.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_54_4.png)
 
 
 ### Train a model that detect multilayer (ice / mixed) cloud <a class="anchor" id="multilayer_ice_mixed"></a>
@@ -1350,7 +1350,7 @@ scaler_ice_over_mixed, df_train_ice_over_mixed_processed, df_test_ice_over_mixed
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_56_1.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_56_1.png)
 
 
     ice / mixed          333
@@ -1359,11 +1359,11 @@ scaler_ice_over_mixed, df_train_ice_over_mixed_processed, df_test_ice_over_mixed
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_56_3.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_56_3.png)
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_56_4.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_56_4.png)
 
 
 
@@ -1387,22 +1387,22 @@ evaluate_gp_model('ice / mixed', features_train, gp_ice_over_mixed, df_test_ice_
 ```
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_58_0.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_58_0.png)
 
 
     accuracy_score: 0.6358609794628752
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_58_2.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_58_2.png)
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_58_3.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_58_3.png)
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_58_4.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_58_4.png)
 
 
 ### Train a model that detect multilayer (ice / ice) cloud <a class="anchor" id="multilayer_ice_ice"></a>
@@ -1429,7 +1429,7 @@ scaler_ice_over_ice, df_train_ice_over_ice_processed, df_test_ice_over_ice_proce
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_60_1.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_60_1.png)
 
 
     (not) ice / ice    331
@@ -1438,11 +1438,11 @@ scaler_ice_over_ice, df_train_ice_over_ice_processed, df_test_ice_over_ice_proce
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_60_3.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_60_3.png)
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_60_4.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_60_4.png)
 
 
 
@@ -1466,22 +1466,22 @@ evaluate_gp_model('ice / ice', features_train, gp_ice_over_ice, df_test_ice_over
 ```
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_62_0.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_62_0.png)
 
 
     accuracy_score: 0.6453396524486572
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_62_2.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_62_2.png)
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_62_3.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_62_3.png)
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_62_4.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_62_4.png)
 
 
 ### Train a model that detect multilayer (liquid / liquid) cloud <a class="anchor" id="multilayer_liquid_liquid"></a>
@@ -1508,7 +1508,7 @@ scaler_liquid_over_liquid, df_train_liq_over_liq_processed, df_test_liq_over_liq
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_64_1.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_64_1.png)
 
 
     (not) liquid / liquid    193
@@ -1517,7 +1517,7 @@ scaler_liquid_over_liquid, df_train_liq_over_liq_processed, df_test_liq_over_liq
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_64_3.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_64_3.png)
 
 
 
@@ -1541,20 +1541,20 @@ evaluate_gp_model('liquid / liquid', features_train, gp_liq_over_liq, df_test_li
 ```
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_66_0.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_66_0.png)
 
 
     accuracy_score: 0.5967614533965245
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_66_2.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_66_2.png)
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_66_3.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_66_3.png)
 
 
 
-![png](readme_img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_66_4.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_66_4.png)
 
