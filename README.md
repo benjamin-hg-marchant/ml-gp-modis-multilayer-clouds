@@ -1,8 +1,8 @@
 
 <h1 style='font-size:20px;text-align: center'>
 A machine learning algorithm based on Gaussian processes 
-<br> for MODIS multilayer cloud and thermodynamic phase 
-<br> classification using CALIOP and CloudSat
+for MODIS multilayer cloud and thermodynamic phase 
+classification using CALIOP and CloudSat
 </h1>
 
 <p style='text-align: center'>
