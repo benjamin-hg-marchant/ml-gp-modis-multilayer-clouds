@@ -1,6 +1,8 @@
 
 <h1 style='font-size:20px;text-align: center'>
-A machine learning algorithm based on Gaussian processes for MODIS multilayer cloud and thermodynamic phase classification using CALIOP and CloudSat
+A machine learning algorithm based on Gaussian processes 
+<br> for MODIS multilayer cloud and thermodynamic phase 
+<br> classification using CALIOP and CloudSat
 </h1>
 
 <p style='text-align: center'>
@@ -12,9 +14,9 @@ Author: Benjamin Marchant
 
 This Jupyter notebook presents a machine learning algorithm based on Gaussian processes to detect cloud thermodynamic phase and multilayer clouds for the MODIS (Moderate Resolution Imaging Spectroradiometer) instrument. The algorithm is trained using a co-located dataset between MODIS CALIOP and CloudSat.
 
-Note 1: dataset used to train the algorithm can be downloaded on Github or 
+Note 1: dataset used to train the algorithm is publicly available [on Github](https://github.com/benjamin-hg-marchant/ml-gp-modis-multilayer-clouds/tree/master/data).
 
-Note 2: More information about the author can be found on the following <a href="https://moonbooks.org/Notebooks/6364d3f0f495b6ab9dcf8d3b5c6e0b01/">open notebook</a>
+Note 2: Main author open notebook can be found at the following <a href="https://moonbooks.org/Notebooks/6364d3f0f495b6ab9dcf8d3b5c6e0b01/">url</a>.
 
 ![Aqua](https://eospso.nasa.gov/sites/default/files/sat/Aqua_b.jpg)
 
@@ -25,6 +27,8 @@ Table of Content:
 * [Data Preparation (scaling and standardization)](#data_preparation)
 * [Create a learning function](#learning_function)
 * [Create an evaluation function](#evaluation_function)
+* [Select MODIS bands that will be used to train the ML model ](#selected_modis_band)
+* [Split the dataset between a training and testing dataset](#create_train_and_test_dataset)
 * [Train a model that detect monolayer liquid cloud](#monolayer_liquid)
 * [Train a model that detect monolayer ice cloud](#monolayer_ice)
 * [Train a model that detect monolayer mixed cloud](#monolayer_mixed)
@@ -32,6 +36,8 @@ Table of Content:
 * [Train a model that detect multilayer (ice / mixed) cloud](#multilayer_ice_mixed)
 * [Train a model that detect multilayer (ice / ice) cloud](#multilayer_ice_ice)
 * [Train a model that detect multilayer (liquid / liquid) cloud](#multilayer_liquid_liquid)
+* [How to apply a machine learning model to a single MODIS granule ?](#modis_granule)
+* [Conclusions](#conclusions)
 
 
 ```python
@@ -47,6 +53,7 @@ from sklearn.utils import resample
 from sklearn.metrics import roc_curve, auc
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import log_loss
+from pyhdf.SD import SD, SDC 
 
 from pyhdf.SD import SD, SDC 
 from matplotlib.pyplot import figure
@@ -55,6 +62,7 @@ from scipy.spatial.distance import pdist, cdist
 
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import matplotlib.cm as cm
 import pandas as pd
 import numpy as np
 import seaborn as sns; sns.set()
@@ -724,94 +732,11 @@ plt.show()
 
 ### Data Preparation (scaling and standardization) <a class="anchor" id="data_preparation"></a>
 
-Split the dataset between a training and testing dataset:
-
-
-```python
-df_train, df_test = train_test_split(df, test_size = .3, random_state = 42)
-
-print(df_train.shape)
-```
-
-    (5908, 115)
-
-
-Test data scaling with 0 mean and std = 1:
-
-
-```python
-df_sub_cutoff = df_train.sample(n=300, random_state=42)
-
-features = [col for col in df if col.startswith('modis_band')] 
-
-X_train = np.array(df_sub_cutoff[features])
-
-scaler = preprocessing.StandardScaler().fit(X_train)
-
-X_scaled = scaler.transform(X_train)
-
-print(X_scaled.mean(axis=0))
-print(X_scaled.std(axis=0))
-
-print(X_scaled.shape)
-```
-
-    [-1.36187358e-16  8.88178420e-17  5.32907052e-17 -1.24344979e-16
-      5.92118946e-17  3.55271368e-17 -1.18423789e-17 -7.84557604e-17
-      2.96059473e-17 -5.32907052e-17 -1.77635684e-17  1.77635684e-17
-     -1.77635684e-17  0.00000000e+00 -1.48029737e-17  9.84989867e-14
-     -5.92118946e-18  5.92118946e-18 -5.92118946e-17  8.28966525e-17
-     -5.32907052e-17  2.07241631e-17 -8.28966525e-17  8.88178420e-18
-      7.99360578e-17 -1.12502600e-16 -1.53950926e-16 -8.58572472e-17
-     -8.88178420e-17  1.89478063e-16  8.88178420e-17 -4.44089210e-18
-     -1.33226763e-16  1.64313008e-16 -2.22044605e-17  1.43588845e-16
-      2.02800739e-16 -8.88178420e-18  1.71714494e-16  7.69754630e-17
-     -7.69754630e-17 -1.18423789e-17 -2.36847579e-17  0.00000000e+00]
-    [1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1.
-     1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 1. 0.]
-    (300, 44)
-
-
-
-```python
-X_test_scaled = scaler.transform(df_test[features]) 
-
-print(X_test_scaled.mean(axis=0))
-print(X_test_scaled.std(axis=0))
-
-print(X_test_scaled.shape)
-```
-
-    [-5.81856825e-02 -6.78804943e-02 -5.17735784e-02 -6.15159463e-02
-     -5.89387757e-02  4.65341793e-02 -1.20713567e-02 -1.72980244e-04
-      1.00707993e-01  1.62606939e-02  1.73326513e-02  7.67627094e-02
-      4.67352770e-02  4.06531465e-02  6.28327948e-02  1.85762809e+02
-      9.23131580e-02  3.80820084e-02 -2.02189641e-02 -4.63880326e-02
-     -5.10592757e-02 -3.93622681e-02  3.18663483e-02  4.64098035e-02
-      3.30134167e-02  3.29881011e-02  4.76278412e-02  3.77397670e-02
-      6.85382961e-02  6.78638654e-02  4.11945284e-02  4.23541253e-02
-      4.76757616e-02  4.99791226e-02  6.16795863e-02  6.63279767e-02
-      7.31955291e-02 -1.50289942e-03 -4.33422773e-02 -2.92689934e-02
-     -5.08739332e-02  4.43642983e-02  8.69657633e-03  0.00000000e+00]
-    [9.73869571e-01 9.88688595e-01 9.70094991e-01 9.69260520e-01
-     9.83009531e-01 1.00071800e+00 9.61138201e-01 9.91376546e-01
-     1.03143173e+00 1.00227845e+00 9.97754229e-01 1.08376076e+00
-     1.06792765e+00 1.19040860e+00 1.09619494e+00 3.56676503e+03
-     1.16064187e+00 1.06145797e+00 1.00839667e+00 9.76770831e-01
-     9.95893751e-01 9.09278955e-01 9.58587129e-01 9.65807044e-01
-     9.59766685e-01 9.63028859e-01 9.82438542e-01 1.00328411e+00
-     9.82573824e-01 9.93788984e-01 9.97704089e-01 9.93220213e-01
-     9.93394861e-01 9.92236093e-01 9.80817104e-01 9.68363958e-01
-     9.54256155e-01 1.03978606e+00 1.00432998e+00 9.95904168e-01
-     1.03082515e+00 9.97083223e-01 1.01473091e+00 0.00000000e+00]
-    (2532, 44)
-
-
 Create a function that prepare the data:
 
 
 ```python
-def data_preparation(df_train, df_test, max_train_sample_size, label_name):
+def data_preparation(df_train, df_test, max_train_sample_size, label_name, features_train):
 
     df_train_processed = df_train.copy()
     df_test_processed = df_test.copy()
@@ -853,30 +778,19 @@ def data_preparation(df_train, df_test, max_train_sample_size, label_name):
     
     #----- data train scaling -----#
     
-    features = [col for col in df if col.startswith('modis_band')] 
-    
-    #print(df_train_processed[features])
-    
-    X_train = df_train_processed[features]
+    X_train = df_train_processed[features_train]
 
     scaler = preprocessing.StandardScaler().fit(X_train)
 
     X_train_scaled = scaler.transform(X_train)
     
-    #print(X_train_scaled.mean(axis=0))
-    #print(X_train_scaled.std(axis=0))
-
-    #print(X_train_scaled.shape)    
-
-    df_train_processed[features] = X_train_scaled
-    
-    #print(df_train_processed[features])
-    
+    df_train_processed[features_train] = X_train_scaled
+        
     #----- data test scaling -----#    
     
-    X_test_scaled = scaler.transform(df_test_processed[features])
+    X_test_scaled = scaler.transform(df_test_processed[features_train])
     
-    df_test_processed[features] = X_test_scaled
+    df_test_processed[features_train] = X_test_scaled
     
     df_test_processed['label 2'][ df_test_processed['label 2'] != label_name ] = '(not) ' + label_name
     
@@ -904,16 +818,12 @@ def data_preparation(df_train, df_test, max_train_sample_size, label_name):
 
 ```python
 def train_gp_model(label_name, features_train, df_train_processed):
-
-    df_train_column_names_list = list(df.columns)
-
-    features_train_idx = [df_train_column_names_list.index(i) for i in features_train] 
     
     kernel = C(1.0, (0.1, 10.0)) * RBF([0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2], (1e-2, 1e2))
 
     gp = GaussianProcessClassifier(kernel=kernel, n_restarts_optimizer=20)
-
-    gp.fit(df_train_processed.iloc[:,features_train_idx], df_train_processed['label 2'])
+    
+    gp.fit(df_train_processed[features_train], df_train_processed['label 2'])
     
     return gp
 ```
@@ -924,13 +834,9 @@ def train_gp_model(label_name, features_train, df_train_processed):
 
 ```python
 def evaluate_gp_model(label_name, features_train, gp, df_test_processed):
-    
-    df_train_column_names_list = list(df.columns)
-
-    features_train_idx = [df_train_column_names_list.index(i) for i in features_train]  
-    
+        
     y_true = df_test_processed['label 2']
-    y_pred = gp.predict_proba(df_test_processed.iloc[:,features_train_idx])
+    y_pred = gp.predict_proba(df_test_processed[features_train])
     
     df_test_processed['label 2'].value_counts().plot(kind='bar')
 
@@ -1008,6 +914,29 @@ def evaluate_gp_model(label_name, features_train, gp, df_test_processed):
     return None
 ```
 
+### Select MODIS bands that will be used to train the ML model <a class="anchor" id="selected_modis_band"></a>
+
+
+```python
+features_train = ['modis_band_1','modis_band_7','modis_band_20',
+                  'modis_band_26','modis_band_28','modis_band_29',
+                  'modis_band_31','modis_band_32']
+
+sub_df = df[features_train + ['label 1','label 2']]
+```
+
+### Split the dataset between a training and testing dataset:  <a class="anchor" id="create_train_and_test_dataset"></a>
+
+
+```python
+df_train, df_test = train_test_split(sub_df, test_size = .3, random_state = 42)
+
+print(df_train.shape)
+```
+
+    (5908, 10)
+
+
 ### Train a model that detect monolayer liquid cloud <a class="anchor" id="monolayer_liquid"></a>
 
 
@@ -1017,8 +946,8 @@ def evaluate_gp_model(label_name, features_train, gp, df_test_processed):
 scaler_liquid, df_train_liquid_processed, df_test_liquid_processed = data_preparation(
                                             df_train, 
                                             df_test, 
-                                            max_train_sample_size = 500, 
-                                            label_name = 'liquid')
+                                            max_train_sample_size = 100, 
+                                            label_name = 'liquid', features_train = features_train)
 ```
 
     liquid             2064
@@ -1034,7 +963,7 @@ scaler_liquid, df_train_liquid_processed, df_test_liquid_processed = data_prepar
 
 
 
-![png](machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_files/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_40_1.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_39_1.png)
 
 
     (not) liquid    2064
@@ -1043,30 +972,26 @@ scaler_liquid, df_train_liquid_processed, df_test_liquid_processed = data_prepar
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_40_3.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_39_3.png)
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_40_4.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_39_4.png)
 
 
-    CPU times: user 401 ms, sys: 30.5 ms, total: 432 ms
-    Wall time: 433 ms
+    CPU times: user 334 ms, sys: 6.96 ms, total: 341 ms
+    Wall time: 339 ms
 
 
 
 ```python
 %%time
 
-features_train = ['modis_band_1','modis_band_7','modis_band_20',
-                  'modis_band_26','modis_band_28','modis_band_29',
-                  'modis_band_31','modis_band_32']
-
 gp_liquid = train_gp_model('liquid', features_train, df_train_liquid_processed)
 ```
 
-    CPU times: user 1min 51s, sys: 8.93 s, total: 2min
-    Wall time: 1min 4s
+    CPU times: user 4.8 s, sys: 32.8 ms, total: 4.83 s
+    Wall time: 2.5 s
 
 
 
@@ -1077,26 +1002,26 @@ evaluate_gp_model('liquid', features_train, gp_liquid, df_test_liquid_processed)
 ```
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_42_0.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_41_0.png)
 
 
-    accuracy_score: 0.782780410742496
-
-
-
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_42_2.png)
+    accuracy_score: 0.7729067930489731
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_42_3.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_41_2.png)
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_42_4.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_41_3.png)
 
 
-    CPU times: user 1.13 s, sys: 27.9 ms, total: 1.16 s
-    Wall time: 965 ms
+
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_41_4.png)
+
+
+    CPU times: user 1.01 s, sys: 14.5 ms, total: 1.02 s
+    Wall time: 817 ms
 
 
 ### Train a model that detect monolayer ice cloud <a class="anchor" id="monolayer_ice"></a>
@@ -1106,8 +1031,8 @@ evaluate_gp_model('liquid', features_train, gp_liquid, df_test_liquid_processed)
 scaler_ice, df_train_ice_processed, df_test_ice_processed = data_preparation(
                                         df_train, 
                                         df_test, 
-                                        max_train_sample_size = 500, 
-                                        label_name = 'ice')
+                                        max_train_sample_size = 100, 
+                                        label_name = 'ice', features_train = features_train)
 ```
 
     liquid             2064
@@ -1123,20 +1048,20 @@ scaler_ice, df_train_ice_processed, df_test_ice_processed = data_preparation(
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_44_1.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_43_1.png)
 
 
-    (not) ice    1124
     ice          1124
+    (not) ice    1124
     Name: label 2, dtype: int64
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_44_3.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_43_3.png)
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_44_4.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_43_4.png)
 
 
 
@@ -1150,22 +1075,22 @@ evaluate_gp_model('ice', features_train, gp_ice, df_test_ice_processed)
 ```
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_46_0.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_45_0.png)
 
 
-    accuracy_score: 0.7863349131121643
-
-
-
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_46_2.png)
+    accuracy_score: 0.7417061611374408
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_46_3.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_45_2.png)
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_46_4.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_45_3.png)
+
+
+
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_45_4.png)
 
 
 ### Train a model that detect monolayer mixed cloud <a class="anchor" id="monolayer_mixed"></a>
@@ -1175,8 +1100,8 @@ evaluate_gp_model('ice', features_train, gp_ice, df_test_ice_processed)
 scaler_mixed, df_train_mixed_processed, df_test_mixed_processed = data_preparation(
                                         df_train, 
                                         df_test, 
-                                        max_train_sample_size = 500, 
-                                        label_name = 'mixed')
+                                        max_train_sample_size = 100, 
+                                        label_name = 'mixed', features_train = features_train)
 ```
 
     liquid             2064
@@ -1192,7 +1117,7 @@ scaler_mixed, df_train_mixed_processed, df_test_mixed_processed = data_preparati
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_48_1.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_47_1.png)
 
 
     mixed          900
@@ -1201,11 +1126,11 @@ scaler_mixed, df_train_mixed_processed, df_test_mixed_processed = data_preparati
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_48_3.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_47_3.png)
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_48_4.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_47_4.png)
 
 
 
@@ -1219,8 +1144,8 @@ features_train = ['modis_band_1','modis_band_7','modis_band_20',
 gp_mixed = train_gp_model('mixed', features_train, df_train_mixed_processed)
 ```
 
-    CPU times: user 2min 28s, sys: 11.3 s, total: 2min 39s
-    Wall time: 1min 23s
+    CPU times: user 6.12 s, sys: 44.1 ms, total: 6.17 s
+    Wall time: 3.13 s
 
 
 
@@ -1229,22 +1154,22 @@ evaluate_gp_model('mixed', features_train, gp_mixed, df_test_mixed_processed)
 ```
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_50_0.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_49_0.png)
 
 
-    accuracy_score: 0.7338072669826224
-
-
-
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_50_2.png)
+    accuracy_score: 0.6303317535545023
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_50_3.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_49_2.png)
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_50_4.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_49_3.png)
+
+
+
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_49_4.png)
 
 
 ### Train a model that detect multilayer (ice / liquid) cloud <a class="anchor" id="multilayer_ice_liquid"></a>
@@ -1255,7 +1180,7 @@ scaler_ice_over_liquid, df_train_ice_over_liquid_processed, df_test_ice_over_liq
                                         df_train, 
                                         df_test, 
                                         max_train_sample_size = 500, 
-                                        label_name = 'ice / liquid')
+                                        label_name = 'ice / liquid', features_train = features_train)
 ```
 
     liquid             2064
@@ -1271,7 +1196,7 @@ scaler_ice_over_liquid, df_train_ice_over_liquid_processed, df_test_ice_over_liq
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_52_1.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_51_1.png)
 
 
     ice / liquid          855
@@ -1280,11 +1205,11 @@ scaler_ice_over_liquid, df_train_ice_over_liquid_processed, df_test_ice_over_liq
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_52_3.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_51_3.png)
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_52_4.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_51_4.png)
 
 
 
@@ -1298,8 +1223,8 @@ features_train = ['modis_band_1','modis_band_7','modis_band_20',
 gp_ice_over_liquid = train_gp_model('ice / liquid', features_train, df_train_ice_over_liquid_processed)
 ```
 
-    CPU times: user 2min 20s, sys: 10.8 s, total: 2min 31s
-    Wall time: 1min 20s
+    CPU times: user 2min 9s, sys: 8.84 s, total: 2min 18s
+    Wall time: 1min 9s
 
 
 
@@ -1308,22 +1233,22 @@ evaluate_gp_model('ice / liquid', features_train, gp_ice_over_liquid, df_test_ic
 ```
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_54_0.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_53_0.png)
 
 
     accuracy_score: 0.6184834123222749
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_54_2.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_53_2.png)
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_54_3.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_53_3.png)
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_54_4.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_53_4.png)
 
 
 ### Train a model that detect multilayer (ice / mixed) cloud <a class="anchor" id="multilayer_ice_mixed"></a>
@@ -1333,8 +1258,8 @@ evaluate_gp_model('ice / liquid', features_train, gp_ice_over_liquid, df_test_ic
 scaler_ice_over_mixed, df_train_ice_over_mixed_processed, df_test_ice_over_mixed_processed = data_preparation(
                                         df_train, 
                                         df_test, 
-                                        max_train_sample_size = 500, 
-                                        label_name = 'ice / mixed')
+                                        max_train_sample_size = 100, 
+                                        label_name = 'ice / mixed', features_train = features_train)
 ```
 
     liquid             2064
@@ -1350,20 +1275,20 @@ scaler_ice_over_mixed, df_train_ice_over_mixed_processed, df_test_ice_over_mixed
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_56_1.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_55_1.png)
 
 
-    ice / mixed          333
     (not) ice / mixed    333
+    ice / mixed          333
     Name: label 2, dtype: int64
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_56_3.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_55_3.png)
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_56_4.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_55_4.png)
 
 
 
@@ -1377,8 +1302,8 @@ features_train = ['modis_band_1','modis_band_7','modis_band_20',
 gp_ice_over_mixed = train_gp_model('ice / mixed', features_train, df_train_ice_over_mixed_processed)
 ```
 
-    CPU times: user 2min 31s, sys: 12.8 s, total: 2min 44s
-    Wall time: 1min 28s
+    CPU times: user 5.66 s, sys: 59.6 ms, total: 5.71 s
+    Wall time: 3.07 s
 
 
 
@@ -1387,22 +1312,22 @@ evaluate_gp_model('ice / mixed', features_train, gp_ice_over_mixed, df_test_ice_
 ```
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_58_0.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_57_0.png)
 
 
-    accuracy_score: 0.6358609794628752
-
-
-
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_58_2.png)
+    accuracy_score: 0.5217219589257504
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_58_3.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_57_2.png)
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_58_4.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_57_3.png)
+
+
+
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_57_4.png)
 
 
 ### Train a model that detect multilayer (ice / ice) cloud <a class="anchor" id="multilayer_ice_ice"></a>
@@ -1412,8 +1337,8 @@ evaluate_gp_model('ice / mixed', features_train, gp_ice_over_mixed, df_test_ice_
 scaler_ice_over_ice, df_train_ice_over_ice_processed, df_test_ice_over_ice_processed = data_preparation(
                                         df_train, 
                                         df_test, 
-                                        max_train_sample_size = 500, 
-                                        label_name = 'ice / ice')
+                                        max_train_sample_size = 100, 
+                                        label_name = 'ice / ice', features_train = features_train)
 ```
 
     liquid             2064
@@ -1429,20 +1354,20 @@ scaler_ice_over_ice, df_train_ice_over_ice_processed, df_test_ice_over_ice_proce
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_60_1.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_59_1.png)
 
 
-    (not) ice / ice    331
     ice / ice          331
+    (not) ice / ice    331
     Name: label 2, dtype: int64
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_60_3.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_59_3.png)
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_60_4.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_59_4.png)
 
 
 
@@ -1456,8 +1381,8 @@ features_train = ['modis_band_1','modis_band_7','modis_band_20',
 gp_ice_over_ice = train_gp_model('ice / ice', features_train, df_train_ice_over_ice_processed)
 ```
 
-    CPU times: user 2min 11s, sys: 10.8 s, total: 2min 22s
-    Wall time: 1min 15s
+    CPU times: user 6.48 s, sys: 42.3 ms, total: 6.52 s
+    Wall time: 3.31 s
 
 
 
@@ -1466,22 +1391,22 @@ evaluate_gp_model('ice / ice', features_train, gp_ice_over_ice, df_test_ice_over
 ```
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_62_0.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_61_0.png)
 
 
-    accuracy_score: 0.6453396524486572
-
-
-
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_62_2.png)
+    accuracy_score: 0.6212480252764613
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_62_3.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_61_2.png)
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_62_4.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_61_3.png)
+
+
+
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_61_4.png)
 
 
 ### Train a model that detect multilayer (liquid / liquid) cloud <a class="anchor" id="multilayer_liquid_liquid"></a>
@@ -1491,8 +1416,8 @@ evaluate_gp_model('ice / ice', features_train, gp_ice_over_ice, df_test_ice_over
 scaler_liquid_over_liquid, df_train_liq_over_liq_processed, df_test_liq_over_liq_processed = data_preparation(
                                         df_train, 
                                         df_test, 
-                                        max_train_sample_size = 500, 
-                                        label_name = 'liquid / liquid')
+                                        max_train_sample_size = 100, 
+                                        label_name = 'liquid / liquid', features_train = features_train)
 ```
 
     liquid             2064
@@ -1508,7 +1433,7 @@ scaler_liquid_over_liquid, df_train_liq_over_liq_processed, df_test_liq_over_liq
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_64_1.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_63_1.png)
 
 
     (not) liquid / liquid    193
@@ -1517,7 +1442,11 @@ scaler_liquid_over_liquid, df_train_liq_over_liq_processed, df_test_liq_over_liq
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_64_3.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_63_3.png)
+
+
+
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_63_4.png)
 
 
 
@@ -1531,8 +1460,8 @@ features_train = ['modis_band_1','modis_band_7','modis_band_20',
 gp_liq_over_liq = train_gp_model('liquid / liquid', features_train, df_train_liq_over_liq_processed)
 ```
 
-    CPU times: user 1min 9s, sys: 6.25 s, total: 1min 15s
-    Wall time: 39.7 s
+    CPU times: user 6.3 s, sys: 47.8 ms, total: 6.35 s
+    Wall time: 3.23 s
 
 
 
@@ -1541,20 +1470,549 @@ evaluate_gp_model('liquid / liquid', features_train, gp_liq_over_liq, df_test_li
 ```
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_66_0.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_65_0.png)
 
 
-    accuracy_score: 0.5967614533965245
-
-
-
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_66_2.png)
+    accuracy_score: 0.6015007898894155
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_66_3.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_65_2.png)
 
 
 
-![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_66_4.png)
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_65_3.png)
+
+
+
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_65_4.png)
+
+
+### How to apply a machine learning model to a single MODIS granule ? <a class="anchor" id="modis_granule"></a>
+
+In this section, we will see how to develop an algorihtm to apply previous ML models (based on Gaussian processes) to a single MODIS granule. For that we will use the following products: 
+
+- MODIS MYD021KM L1
+- MODIS MYD06 L2 Cloud Mask (to select only cloudy pixels to apply ML models)
+- MODIS MYD06 L2 Cloud Phase (only to make some comparisons with the ML models)
+- MODIS MYD06 L2 Multilayer Clouds (only to make some comparisons with the ML models)
+
+
+```python
+myd021km_file = SD('../data/MYD021KM.A2008015.1435.006.2012066180438.hdf', SDC.READ)
+myd06_file = SD('../data/MYD06_L2.A2008015.1435.006.2013342100940.hdf', SDC.READ)
+```
+
+Create a function to plot MODIS MYD06 L2 Cloud Mask:
+
+
+```python
+def bits_stripping(bit_start,bit_count,value):
+    bitmask=pow(2,bit_start+bit_count)-1
+    return np.right_shift(np.bitwise_and(value,bitmask),bit_start)
+
+def plot_MODIS_L2_Cloud_Mask_1km(cloud_mask_flag):
+    figure(num=None, figsize=(12, 10), dpi=80, facecolor='w', edgecolor='k')
+    #cmap =  [(1.0,1.0,1.0)] + [(1.0, 0.0, 0.0)] + [(65.0/255,105.0/255,225.0/255)] + [(0.0,0.0,0.0)]
+    #cmap = sns.mpl_palette("Set1", 4)
+    cmap = sns.color_palette("RdBu", n_colors=4)
+    cmap = mpl.colors.ListedColormap(cmap)
+    bounds = [-0.5, 0.5, 1.5, 2.5, 3.5]
+    norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
+    img = plt.imshow(np.fliplr(cloud_mask_flag), cmap=cmap, norm=norm,interpolation='none', origin='lower')
+    cbar_bounds = [-0.5, 0.5, 1.5, 2.5, 3.5]
+    cbar_ticks = [ 0, 1, 2, 3]  
+    cbar_labels = ['Confident Cloudy', 'Probably Cloudy','Probably Clear ','Confident Clear']  
+    cbar = plt.colorbar(img, cmap=cmap, norm=norm, boundaries=cbar_bounds, ticks=cbar_ticks)
+    cbar.ax.set_yticklabels(cbar_labels, fontsize=11)
+    plt.title('MODIS MYD06 C6 Cloud Mask 1km', fontsize=11)
+    l = [int(i) for i in np.linspace(0,data.shape[1],6)]
+    plt.xticks(l, [i for i in reversed(l)], rotation=0, fontsize=11 )
+    l = [int(i) for i in np.linspace(0,data.shape[0],9)]
+    plt.yticks(l, l, rotation=0, fontsize=11 )
+    plt.xticks(fontsize=11)
+    plt.yticks(fontsize=11)
+    plt.show()
+```
+
+
+```python
+data_selected_id = myd06_file.select('Cloud_Mask_1km')
+data = data_selected_id.get()   
+cloud_mask_flag = bits_stripping(1,2,data[:,:,0])
+plot_MODIS_L2_Cloud_Mask_1km(cloud_mask_flag)  
+```
+
+
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_70_0.png)
+
+
+Create a function to plot MODIS MYD06 L2 Cloud Phase:
+
+
+```python
+def plot_MODIS_L2_Cloud_Phase_Optical_Properties(data):
+    figure(num=None, figsize=(12, 10), dpi=80, facecolor='w', edgecolor='k')
+    cmap = sns.color_palette("RdBu_r", n_colors=4)
+    cmap = mpl.colors.ListedColormap(cmap)
+    bounds = [-0.5, 1.5, 2.5, 3.5, 4.5]
+    norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
+    img = plt.imshow(np.fliplr(data), cmap=cmap, norm=norm,interpolation='none', origin='lower')
+    cbar_bounds = [0.5,1.5, 2.5, 3.5, 4.5]
+    cbar_ticks = [1.0,2.0,3.0,4.0]  
+    cbar_labels = ['clear','Liquid','Ice','Und.']  
+    cbar = plt.colorbar(img, cmap=cmap, norm=norm, boundaries=cbar_bounds, ticks=cbar_ticks)
+    cbar.ax.set_yticklabels(cbar_labels, fontsize=10)
+    plt.title('MODIS MYD06 C6 \n Cloud Phase Optical Properties', fontsize=11)
+    l = [int(i) for i in np.linspace(0,data.shape[1],6)]
+    plt.xticks(l, [i for i in reversed(l)], rotation=0, fontsize=11 )
+    l = [int(i) for i in np.linspace(0,data.shape[0],9)]
+    plt.yticks(l, l, rotation=0, fontsize=11 )
+    plt.xticks(fontsize=11)
+    plt.yticks(fontsize=11)
+    plt.show()
+```
+
+
+```python
+data_selected_id = myd06_file.select('Cloud_Phase_Optical_Properties')
+data = data_selected_id.get()
+plot_MODIS_L2_Cloud_Phase_Optical_Properties(data)   
+```
+
+
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_73_0.png)
+
+
+Create a function to plot MODIS MYD06 L2 Multilayer Clouds:
+
+
+```python
+def plot_multilayer_clouds(data):
+    figure(num=None, figsize=(12, 10), dpi=80, facecolor='w', edgecolor='k')
+    cmap = sns.color_palette('RdBu_r', n_colors=10)
+    cmap = mpl.colors.ListedColormap(cmap)
+    bounds = [-0.5, 1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5,9.5]
+    norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
+    img = plt.imshow(np.fliplr(data), cmap=cmap, norm=norm,interpolation='none', origin='lower')
+    cbar_bounds = [-0.5,0.5, 1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5,9.5]
+    cbar_ticks = [0,1,2,3,4,5,6,7,8,9]               
+    cbar = plt.colorbar(img, cmap=cmap, norm=norm, boundaries=cbar_bounds, ticks=cbar_ticks)
+    cbar.ax.set_yticklabels(cbar_ticks, fontsize=10)
+    plt.title('MODIS MYD06 C6 \n Multilayer Clouds', fontsize=11)
+    l = [int(i) for i in np.linspace(0,data.shape[1],6)]
+    plt.xticks(l, [i for i in reversed(l)], rotation=0, fontsize=11 )
+    l = [int(i) for i in np.linspace(0,data.shape[0],9)]
+    plt.yticks(l, l, rotation=0, fontsize=11 )
+    plt.xticks(fontsize=11)
+    plt.yticks(fontsize=11)
+    plt.show()
+```
+
+
+```python
+data_selected_id = myd06_file.select('Cloud_Multi_Layer_Flag')
+
+data = data_selected_id.get()
+data_selected_attributes = data_selected_id.attributes()
+plot_multilayer_clouds(data)
+```
+
+
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_76_0.png)
+
+
+Read and create a function to plot MODIS MYD021KM L1:
+
+
+```python
+EV_250_Aggr1km_RefSB = myd021km_file.select('EV_250_Aggr1km_RefSB')
+EV_500_Aggr1km_RefSB = myd021km_file.select('EV_500_Aggr1km_RefSB')
+EV_1KM_RefSB = myd021km_file.select('EV_1KM_RefSB')
+EV_1KM_Emissive = myd021km_file.select('EV_1KM_Emissive')
+```
+
+First, lets create a dictionary that will store for each MODIS band the corresponding SDS name and index: 
+
+
+```python
+modis_band_dic = {}
+```
+
+
+```python
+#print( EV_250_Aggr1km_RefSB.info() )
+EV_250_Aggr1km_RefSB_attributes = EV_250_Aggr1km_RefSB.attributes()
+EV_250_Aggr1km_RefSB_scales = EV_250_Aggr1km_RefSB_attributes['reflectance_scales']
+EV_250_Aggr1km_RefSB_offsets = EV_250_Aggr1km_RefSB_attributes['reflectance_offsets']
+#pprint.pprint(EV_250_Aggr1km_RefSB_attributes )
+
+for idx,i in enumerate(EV_250_Aggr1km_RefSB_attributes['band_names'].split(',')):
+    print(idx,i)    
+    modis_band_dic[i] = [EV_250_Aggr1km_RefSB,idx]
+```
+
+    0 1
+    1 2
+
+
+
+```python
+#print( EV_500_Aggr1km_RefSB.info() )
+EV_500_Aggr1km_RefSB_attributes = EV_500_Aggr1km_RefSB.attributes()
+EV_500_Aggr1km_RefSB_scales = EV_500_Aggr1km_RefSB_attributes['reflectance_scales']
+EV_500_Aggr1km_RefSB_offsets = EV_500_Aggr1km_RefSB_attributes['reflectance_offsets']
+#pprint.pprint(EV_500_Aggr1km_RefSB_attributes )
+
+for idx,i in enumerate(EV_500_Aggr1km_RefSB_attributes['band_names'].split(',')):
+    print(idx,i)
+    modis_band_dic[i] = [EV_500_Aggr1km_RefSB,idx]
+```
+
+    0 3
+    1 4
+    2 5
+    3 6
+    4 7
+
+
+
+```python
+#print( EV_1KM_RefSB.info() )
+EV_1KM_RefSB_attributes = EV_1KM_RefSB.attributes()
+EV_1KM_RefSB_scales = EV_1KM_RefSB_attributes['reflectance_scales']
+EV_1KM_RefSB_offsets = EV_1KM_RefSB_attributes['reflectance_offsets']
+#pprint.pprint(EV_1KM_RefSB_attributes )
+
+for idx,i in enumerate(EV_1KM_RefSB_attributes['band_names'].split(',')):
+    print(idx,i)
+    modis_band_dic[i] = [EV_1KM_RefSB,idx]
+```
+
+    0 8
+    1 9
+    2 10
+    3 11
+    4 12
+    5 13lo
+    6 13hi
+    7 14lo
+    8 14hi
+    9 15
+    10 16
+    11 17
+    12 18
+    13 19
+    14 26
+
+
+
+```python
+print( EV_1KM_Emissive.info() )
+EV_1KM_Emissive_attributes = EV_1KM_Emissive.attributes()
+EV_1KM_Emissive_scales = EV_1KM_Emissive_attributes['radiance_scales']
+EV_1KM_Emissive_offsets = EV_1KM_Emissive_attributes['radiance_offsets']
+#pprint.pprint(EV_1KM_Emissive_attributes )
+
+for idx,i in enumerate(EV_1KM_Emissive_attributes['band_names'].split(',')):
+    print(idx,i)
+    modis_band_dic[i] = [EV_1KM_Emissive,idx]
+```
+
+    ('EV_1KM_Emissive', 3, [16, 2030, 1354], 23, 8)
+    0 20
+    1 21
+    2 22
+    3 23
+    4 24
+    5 25
+    6 27
+    7 28
+    8 29
+    9 30
+    10 31
+    11 32
+    12 33
+    13 34
+    14 35
+    15 36
+
+
+
+```python
+for key in modis_band_dic:
+    print(key, modis_band_dic[key][0].info()[0], modis_band_dic[key][1])
+```
+
+    1 EV_250_Aggr1km_RefSB 0
+    2 EV_250_Aggr1km_RefSB 1
+    3 EV_500_Aggr1km_RefSB 0
+    4 EV_500_Aggr1km_RefSB 1
+    5 EV_500_Aggr1km_RefSB 2
+    6 EV_500_Aggr1km_RefSB 3
+    7 EV_500_Aggr1km_RefSB 4
+    8 EV_1KM_RefSB 0
+    9 EV_1KM_RefSB 1
+    10 EV_1KM_RefSB 2
+    11 EV_1KM_RefSB 3
+    12 EV_1KM_RefSB 4
+    13lo EV_1KM_RefSB 5
+    13hi EV_1KM_RefSB 6
+    14lo EV_1KM_RefSB 7
+    14hi EV_1KM_RefSB 8
+    15 EV_1KM_RefSB 9
+    16 EV_1KM_RefSB 10
+    17 EV_1KM_RefSB 11
+    18 EV_1KM_RefSB 12
+    19 EV_1KM_RefSB 13
+    26 EV_1KM_RefSB 14
+    20 EV_1KM_Emissive 0
+    21 EV_1KM_Emissive 1
+    22 EV_1KM_Emissive 2
+    23 EV_1KM_Emissive 3
+    24 EV_1KM_Emissive 4
+    25 EV_1KM_Emissive 5
+    27 EV_1KM_Emissive 6
+    28 EV_1KM_Emissive 7
+    29 EV_1KM_Emissive 8
+    30 EV_1KM_Emissive 9
+    31 EV_1KM_Emissive 10
+    32 EV_1KM_Emissive 11
+    33 EV_1KM_Emissive 12
+    34 EV_1KM_Emissive 13
+    35 EV_1KM_Emissive 14
+    36 EV_1KM_Emissive 15
+
+
+
+```python
+def plot_MODIS_L1(MODIS_band, modis_band_dic):
+
+    data_selected_id = modis_band_dic[str(MODIS_band)][0]
+    band_idx = modis_band_dic[str(MODIS_band)][1]
+    title = 'MODIS Band' + str(MODIS_band)
+    
+    figure(num=None, figsize=(12, 10), dpi=80, facecolor='w', edgecolor='k')
+
+    data = data_selected_id.get()
+    data_selected_band = data[band_idx,:,:]
+    data_selected_attributes = data_selected_id.attributes()
+    _FillValue = data_selected_attributes['_FillValue']
+    _FillValue = 65528 # warning wrong _FillValue stored in attributes    
+
+    if modis_band_dic[str(MODIS_band)][0].info()[0] == 'EV_1KM_Emissive':
+    
+        radiance_scales = data_selected_attributes['radiance_scales']
+        radiance_offsets = data_selected_attributes['radiance_offsets']
+        data_selected_band[ data_selected_band == _FillValue ] = 0.0
+        data_selected_band = (data_selected_band - radiance_offsets[band_idx]) * radiance_scales[band_idx]    
+    
+    else:
+    
+        reflectance_scales = data_selected_attributes['reflectance_scales']
+        data_selected_band[ data_selected_band == _FillValue ] = 0.0
+        data_selected_band = data_selected_band * reflectance_scales[band_idx]
+
+    cmap = [(0.0,0.0,0.0)] + [(cm.jet(i)) for i in range(1,256)] 
+    cmap = mpl.colors.ListedColormap(cmap)
+    img = plt.imshow(np.fliplr(data_selected_band), cmap=cmap,interpolation='none', origin='lower')
+    plt.title(title, fontsize=11)
+    cbar = plt.colorbar()
+    cbar.ax.tick_params(labelsize=8)
+    l = [int(i) for i in np.linspace(0,data_selected_band.shape[1],6)]
+    plt.xticks(l, [i for i in reversed(l)], rotation=0, fontsize=11 )
+    l = [int(i) for i in np.linspace(0,data_selected_band.shape[0],9)]
+    plt.yticks(l, l, rotation=0, fontsize=11 )
+    plt.xticks(fontsize=11)
+    plt.yticks(fontsize=11)    
+    plt.show()
+    
+plot_MODIS_L1(6,modis_band_dic)
+plot_MODIS_L1(7,modis_band_dic)
+plot_MODIS_L1(28,modis_band_dic)
+plot_MODIS_L1(29,modis_band_dic)
+```
+
+
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_86_0.png)
+
+
+
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_86_1.png)
+
+
+
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_86_2.png)
+
+
+
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_86_3.png)
+
+
+Now let's see how to apply ML models created previously to all cloudy pixels of a single MODIS granule. For that we will vectorize the MODIS cloudy pixels (instead of creating a for loop on every granule pixels which will be quite slow).
+
+First, let's create a function that select only cloudy or probably cloudy pixels:
+
+
+```python
+A = np.argwhere( cloud_mask_flag < 2 ) # cloudy pixels
+row = A[:,0]
+col = A[:,1]
+
+def select_cloudy_pixel_only(data):
+    data_masked = ma.masked_where( cloud_mask_flag > 1, data)
+    return np.ma.compressed(data_masked)
+```
+
+Get the MODIS L1 data:
+
+
+```python
+EV_250_Aggr1km_RefSB_data = EV_250_Aggr1km_RefSB.get()
+EV_500_Aggr1km_RefSB_data = EV_500_Aggr1km_RefSB.get()
+EV_1KM_RefSB_data = EV_1KM_RefSB.get()
+EV_1KM_Emissive_data = EV_1KM_Emissive.get()
+```
+
+
+```python
+def vectorize_modis_l1(features_train, modis_band_dic):
+    
+    X_list = []
+    
+    for feature in features_train:
+    
+        modis_band = feature.replace('modis_band_','')  
+        modis_band_idx = modis_band_dic[modis_band][1]
+        
+        if modis_band_dic[modis_band][0].info()[0] == 'EV_250_Aggr1km_RefSB':
+            data_band = EV_250_Aggr1km_RefSB_data[modis_band_idx,:,:]
+            data_band = (data_band - EV_250_Aggr1km_RefSB_offsets[modis_band_idx]) * EV_250_Aggr1km_RefSB_scales[modis_band_idx]
+  
+        if modis_band_dic[modis_band][0].info()[0] == 'EV_500_Aggr1km_RefSB':
+            data_band = EV_500_Aggr1km_RefSB_data[modis_band_idx,:,:]
+            data_band = (data_band - EV_500_Aggr1km_RefSB_offsets[modis_band_idx]) * EV_500_Aggr1km_RefSB_scales[modis_band_idx]
+            
+        if modis_band_dic[modis_band][0].info()[0] == 'EV_1KM_RefSB':
+            data_band = EV_1KM_RefSB_data[modis_band_idx,:,:]
+            data_band = (data_band - EV_1KM_RefSB_scales[modis_band_idx]) * EV_1KM_RefSB_scales[modis_band_idx]
+            
+        if modis_band_dic[modis_band][0].info()[0] == 'EV_1KM_Emissive':
+            data_band = EV_1KM_Emissive_data[modis_band_idx,:,:] 
+            data_band = (data_band - EV_1KM_Emissive_offsets[modis_band_idx]) * EV_1KM_Emissive_scales[modis_band_idx]
+
+        X_list.append( select_cloudy_pixel_only(data_band) )
+        
+    return np.stack(X_list, axis=-1)
+```
+
+
+```python
+features_train = ['modis_band_1','modis_band_7','modis_band_20',
+                  'modis_band_26','modis_band_28','modis_band_29',
+                  'modis_band_31','modis_band_32']
+
+X = vectorize_modis_l1(features_train, modis_band_dic)
+
+print(X.shape)
+```
+
+    (2016074, 8)
+
+
+
+```python
+X_scaled = scaler_liquid.transform(X)
+```
+
+
+```python
+%%time
+
+gp_liquid_y_prob = gp_liquid.predict_proba(X_scaled)
+```
+
+    CPU times: user 8.28 s, sys: 3.01 s, total: 11.3 s
+    Wall time: 9.97 s
+
+
+
+```python
+def plot_y_prob(data, title):
+    figure(num=None, figsize=(12, 10), dpi=80, facecolor='w', edgecolor='k')
+    cmap = sns.color_palette("RdBu_r", n_colors=10)
+    cmap = mpl.colors.ListedColormap(cmap)
+    img = plt.imshow(np.fliplr(data), cmap=cmap,interpolation='none', origin='lower', vmin=0.0, vmax=1.0)
+    cbar = plt.colorbar(img, cmap=cmap)
+    plt.title(title, fontsize=16)
+    l = [int(i) for i in np.linspace(0,data.shape[1],6)]
+    plt.xticks(l, [i for i in reversed(l)], rotation=0, fontsize=11 )
+    l = [int(i) for i in np.linspace(0,data.shape[0],9)]
+    plt.yticks(l, l, rotation=0, fontsize=11 )
+    plt.xticks(fontsize=11)
+    plt.yticks(fontsize=11)
+    plt.show()
+```
+
+
+```python
+l = ['liquid', '(not) liquid']
+l.sort()
+
+print(l)
+```
+
+    ['(not) liquid', 'liquid']
+
+
+
+```python
+modis_y_prob = np.zeros((cloud_mask_flag.shape)) 
+modis_y_prob[row,col] = gp_liquid_y_prob[:,1]
+plot_y_prob(modis_y_prob, 'Probability of liquid clouds')
+```
+
+
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_97_0.png)
+
+
+
+```python
+X_scaled = scaler_ice.transform(X)
+
+gp_ice_y_prob = gp_ice.predict_proba(X_scaled)
+
+modis_y_prob = np.zeros((cloud_mask_flag.shape)) 
+modis_y_prob[row,col] = gp_ice_y_prob[:,1]
+
+plot_y_prob(modis_y_prob, 'Probability of ice clouds')
+```
+
+
+![png](img/machine_learning_gaussian_processes_modis_cloud_phase_and_multilayer_clouds_v2_98_0.png)
+
+
+### Conclusions <a class="anchor" id="conclusions"></a>
+
+In this notebook, I summarized my first attempt of using machine learning Gaussian processes to develop a cloud phase and multilayer cloud classification algorithm for MODIS. GP give good results on the training and test datasets. Unfortunetly it appears that it is not the best approach to use in production since Gaussian processes approach becomes very slow when the size of the training dataset increases (which will be necessary if I want to add new input features such the surface type, more MODIS bands, etc). So
+
+What are the pro(s) of Gaussian Processes ?
+
+- Easy to train (not a lot of hyperparamters)
+
+What are the con(s) of Gaussian Processes ?
+
+- Very slow to make a new prediction ('lazy learning': use the entire training dataset to make a prediction)
+
+What do we learned ?
+
+Even if GP is not the best suited approach, I learned a bunch of things that will be used in the future notebooks:
+
+- cloud phase and mutlialyer cloud classification is a multi-label problem not a multi-class problem (1 vs all strategy not 1 vs 1 to train ML models).
+- how to scale and homogenize the data.
+- how to vectorize MODIS cloudy pixels to apply a ML model.
+
+What is the next step ?
+
+- I will try the same approach but using a deep neural network instead, that will be presented in the next jupyter notebook. 
 
