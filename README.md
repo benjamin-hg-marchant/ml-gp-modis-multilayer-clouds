@@ -12,6 +12,8 @@ Author: Benjamin Marchant
 <br> v1.0.0
 </p>
 
+[![DOI](https://zenodo.org/badge/290008064.svg)](https://zenodo.org/badge/latestdoi/290008064)
+
 This Jupyter notebook presents a machine learning algorithm based on Gaussian processes to detect cloud thermodynamic phase and multilayer clouds for the MODIS (Moderate Resolution Imaging Spectroradiometer) instrument. The algorithm is trained using a co-located dataset between MODIS CALIOP and CloudSat.
 
 Note 1: dataset used to train the algorithm is publicly available [on Github](https://github.com/benjamin-hg-marchant/ml-gp-modis-multilayer-clouds/tree/master/data).
